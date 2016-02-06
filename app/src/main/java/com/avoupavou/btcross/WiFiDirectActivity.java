@@ -1,6 +1,5 @@
 package com.avoupavou.btcross;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.net.wifi.WpsInfo;
@@ -10,60 +9,77 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.DialogFragment;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import java.util.ArrayList;
 
-public class WiFiDirectActivity extends Activity implements WifiP2pManager.ChannelListener{
+public class WiFiDirectActivity extends AppCompatActivity implements WifiP2pManager.ChannelListener {
 
 
     private static final String TAG="WiFiDirectActivity";
+    private final int xTurn=1;
+    private final int oTurn=-1;
+
+    //Wifi related variables
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
     public WiFiDirectReceiver mReceiver;
+    //Arrays with devices'
     private ArrayList<String> devicesNames;
     private ArrayList<String> devicesAddress;
     private ArrayList<WifiP2pDevice> devicesList;
-    private ArrayAdapter<String> deviceNamesAdapter;
+
     Context c;
 
     private static FloatingActionButton fab;
 
-    //game logic
-    private final int xTurn=1;
-    private final int oTurn=-1;
-    private LanCanvasView canvas;
-    private LanPlayer localPlayer;
+    //Canvas and board
+    private static LanCanvasView canvas;
     private static LanBoard board;
-    private WiFiDirectActivity thisActivity;
-    private LanPlayer p2;
+    //Players
+    private static LanPlayer localPlayer;
+    private static LanPlayer p2;
+    //this activity for reference
+    private static WiFiDirectActivity thisActivity;
+    //ListView adapter
+    private AdapterImageView hybridAdapter;
+    //
+    private String opponentsName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_wi_fi_direct);
+        //lock orientation
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        //set context
         c= this.getApplicationContext();
+        //initialize
         devicesNames = new ArrayList<>();
         devicesAddress = new ArrayList<>();
+        hybridAdapter = new AdapterImageView(this,R.layout.list_item_hybrid,R.id.list_item_device_textview,R.id.list_item_avatar_imageView,devicesNames);
 
-
-        deviceNamesAdapter = new ArrayAdapter<String>(this,R.layout.list_item_device,R.id.list_item_device_textview,devicesNames);
-        final ListView deviceListView = (ListView)findViewById(R.id.device_listview);
-        deviceListView.setAdapter(deviceNamesAdapter);
+        //find listView and set adapter
+        ListView deviceListView = (ListView)findViewById(R.id.list_view);
+        deviceListView.setAdapter(hybridAdapter);
+        //get manager service and initialize channel
+        mManager = (WifiP2pManager)getSystemService(Context.WIFI_P2P_SERVICE);
+        mChannel= mManager.initialize(this, getMainLooper(),this);
+        //get canvas
+        canvas = (LanCanvasView) findViewById(R.id.lan_canvas);
 
         //on list item click
         deviceListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int possition, long id) {
-                if(devicesList!=null) {
+                if (devicesList != null) {
                     String address = devicesAddress.get(possition);
                     String name = devicesNames.get(possition);
                     Toast.makeText(c, "Connecting to " + name, Toast.LENGTH_SHORT).show();
@@ -72,51 +88,56 @@ public class WiFiDirectActivity extends Activity implements WifiP2pManager.Chann
             }
         });
 
-        mManager = (WifiP2pManager)getSystemService(Context.WIFI_P2P_SERVICE);
-        mChannel= mManager.initialize(this, getMainLooper(),this);
-
-
-        canvas = (LanCanvasView) findViewById(R.id.lan_canvas);
-
+        //replay fab
         fab = (FloatingActionButton) findViewById(R.id.lan_fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                board = new LanBoard(localPlayer, p2);
-                canvas.setBoard(board);
-                board.setActivity(thisActivity);
-                canvas.clearCanvas();
-                fab.setVisibility(View.GONE);
+                resetCanvasBoard();
+                sendMsg("RESET");
             }
         });
+        //default not visible
         fab.setVisibility(View.GONE);
+        //help fab
+        findViewById(R.id.helpFAB).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //start help activity
+                //startActivity(new Intent());
+                DialogFragment newFragment = new PopUpHelp();
+                newFragment.show(thisActivity.getSupportFragmentManager(), "missiles");
+            }
+        });
+        //keep activity for reference
         thisActivity=this;
-    }
+        opponentsName="Opponent";
+        }
 
-
-    public LanPlayer getLocalPlayer() {
-        return localPlayer;
-    }
-    public LanPlayer getP2() {
-        return p2;
+    private static void resetCanvasBoard(){
+        board = new LanBoard(localPlayer, p2);
+        canvas.setBoard(board);
+        board.setActivity(thisActivity);
+        canvas.clearCanvas();
+        fab.setVisibility(View.GONE);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         mManager = (WifiP2pManager)getSystemService(Context.WIFI_P2P_SERVICE);
-        mManager.removeGroup(mChannel, new ActionListenerHandler(this, "Group removal"));
-        unregisterWifiReceiver();
         registerWifiReceiver();
         mManager.discoverPeers(mChannel, new ActionListenerHandler(this, "Discover peers"));
+
+        findViewById(R.id.helpFAB).setVisibility(View.VISIBLE);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        sendMsg(null);
+        sendMsg("LEFT");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            mManager.stopPeerDiscovery(mChannel, new ActionListenerHandler(this, "Group removal"));
+            mManager.stopPeerDiscovery(mChannel, new ActionListenerHandler(this, "Stop Discovery"));
         }
         mManager.removeGroup(mChannel, new ActionListenerHandler(this, "Group removal"));
         mManager.cancelConnect(mChannel, new ActionListenerHandler(this, "Canceling connect"));
@@ -144,11 +165,11 @@ public class WiFiDirectActivity extends Activity implements WifiP2pManager.Chann
         devicesList =  mReceiver.getDeviceList();
         if(devicesList!=null) {
             //clear adapter from outdated data
-            deviceNamesAdapter.clear();
+            hybridAdapter.clear();
             // update the names of available devices
             calculateDevices();
             //notify adapter to change listView content
-            deviceNamesAdapter.notifyDataSetChanged();
+            hybridAdapter.notifyDataSetChanged();
         }
     }
 
@@ -169,6 +190,7 @@ public class WiFiDirectActivity extends Activity implements WifiP2pManager.Chann
         if(device!=null){
             WifiP2pConfig config = new WifiP2pConfig();
             config.deviceAddress = device.deviceAddress;
+            opponentsName=device.deviceName;
             config.wps.setup= WpsInfo.PBC;
             mManager.connect(mChannel, config, new ActionListenerHandler(this, "Connection to peer"));
         }else{
@@ -188,6 +210,7 @@ public class WiFiDirectActivity extends Activity implements WifiP2pManager.Chann
     }
 
     public void MoveToCanvas(){
+        findViewById(R.id.helpFAB).setVisibility(View.GONE);
         ViewFlipper vf = (ViewFlipper) findViewById( R.id.fliper );
         vf.showNext();
         board = new LanBoard(localPlayer,p2);
@@ -204,23 +227,36 @@ public class WiFiDirectActivity extends Activity implements WifiP2pManager.Chann
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
 
-    static public void handleIncoming(String msg){
+    public void handleIncoming(String msg){
         int x,y;
-        Log.d(TAG,"Incoming "+msg);
-        x = Character.getNumericValue(msg.charAt(0));
-        y = Character.getNumericValue(msg.charAt(1));
-        Log.d(TAG,"interpretered as x = "+x+" y= "+y);
-        board.incomingMove(x, y);
+        Log.d(TAG, "Incoming " + msg);
+        if(msg.equals("RESET")){
+            resetCanvasBoard();
+        }else if (msg.equals("LEFT")) {
+            onBackPressed();
+        }
+        else{
+            x = Character.getNumericValue(msg.charAt(0));
+            y = Character.getNumericValue(msg.charAt(1));
+            Log.d(TAG, "interpretered as x = " + x + " y= " + y);
+            board.incomingMove(x, y);
+        }
     }
 
     public void sendMsg(String msg){
         mReceiver.sendMsg(msg);
-        Log.d(TAG, "sending move");
+        Log.d(TAG, "Sending move");
     }
 
     public void setPlayers() {
-        p2 = new LanPlayer("Gay",-1);
+        p2 = new LanPlayer(opponentsName,-1);
         localPlayer = new LanPlayer(mReceiver.getThisDevice().deviceName,1);
+    }
+    public LanPlayer getLocalPlayer() {
+        return localPlayer;
+    }
+    public LanPlayer getP2() {
+        return p2;
     }
 
 }

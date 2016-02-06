@@ -37,18 +37,18 @@ public class Game extends AsyncTask<String,String,String> {
 
     @Override
     protected String doInBackground(String... params) {
-        String msg="Ultra fail";
+        String msg="";
         if(isServer){
             try {
                 server = new ServerSocket(SERVER_PORT);
-                Log.d(LOG_TAG,"waiting client");
                 socket=server.accept();
-                Log.d(LOG_TAG,"clinet connected");
+                server.close();
                 inputStream = socket.getInputStream();
                 reader = new BufferedReader(new InputStreamReader(inputStream));
                 writer = new PrintWriter(socket.getOutputStream(), true);
                 Log.d(LOG_TAG, "Server created on: " + SERVER_PORT);
-                while(true&&socket!=null){
+
+                while(socket != null){
                     msg=reader.readLine();
                     if(msg==null||isCancelled()) break;
                     Log.d(LOG_TAG,"Reading msg: "+ msg);
@@ -59,7 +59,6 @@ public class Game extends AsyncTask<String,String,String> {
             }finally {
                 try {
                     socket.close();
-                    server.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -122,7 +121,6 @@ public class Game extends AsyncTask<String,String,String> {
         message = msg;
         new Thread(new Sender(msg,writer)).run();
     }
-
     public void run() {
         writer.println(message);
     }

@@ -69,6 +69,26 @@ public class LanBoard {
         }
     }
 
+
+    //----------------------------------------------------------------------------------------------
+
+    public void drawMove(int x,int y,LanPlayer p) {
+        if (isValidMove(x, y)) {
+            board[x][y] = turn;
+            if (isGameWon(x, y, turn) || isGameTie()) {
+                gameOver();
+            }
+            if (turn == oTurn) {
+                drawO(x * (width / 3), y * (height / 3), p);
+                turn = xTurn;
+            } else {
+                drawX(x * (width / 3), y * (height / 3), p);
+                turn = oTurn;
+            }
+
+        }
+    }
+
     private void drawX(float x,float y,LanPlayer p){
         float dimX=(width/3)*(float)0.90;
         float dimY=(height/3)*(float)0.60;
@@ -112,25 +132,7 @@ public class LanBoard {
 
     }
 
-    public void drawMove(int x,int y,LanPlayer p) {
-        if (isValidMove(x, y)) {
-            board[x][y] = turn;
-            if (isGameWon(x, y, turn) || isGameTie()) {
-                gameOver();
-            }
-            if (turn == oTurn) {
-                drawO(x * (width / 3), y * (height / 3), p);
-                turn = xTurn;
-            } else {
-                drawX(x * (width / 3), y * (height / 3), p);
-                turn = oTurn;
-            }
-
-        }
-    }
-
     public boolean isValidMove(int x,int y){
-        Log.d(LOG_TAG,"checking move "+x+" "+y);
         if(x<=2&&x>=0&&y<=2&&y>=0&&(board[x][y] == 0)) return true;
         return false;
     }
@@ -190,7 +192,7 @@ public class LanBoard {
         return GameOver;
     }
 
-    public void drawBoard(){
+    public void updateBoardPath(){
         gridPath.reset();
         gridPath.moveTo(width / 3, 0);
         gridPath.lineTo(width / 3, height);
@@ -249,7 +251,7 @@ public class LanBoard {
         }
     }
     public Path getGridPath(){
-        drawBoard();
+        updateBoardPath();
         return gridPath;
     }
     public Path getMovePathP1(){
@@ -268,7 +270,7 @@ public class LanBoard {
     public String getGameStatus(){
         if(isGameOver()){
             if(winner!=null)
-                return winner.getName()+" winns!";
+                return winner.getPName()+" winns!";
             else{
                 return "Game is a tie!";
             }
@@ -297,15 +299,11 @@ public class LanBoard {
     }
 
     public void incomingMove(int x,int y){
-        Log.d(LOG_TAG,"incomingMove");
         if (!isGameOver()) {
             if (p2.isMyTurn(turn)) {
                 if (isValidMove(x, y)) {
                     p2.setMove(x,y);
                     drawMove(p2.getMove()[0], p2.getMove()[1], p2);
-                    Log.d(LOG_TAG, "Move drawn");
-                }else{
-
                 }
             }
         }

@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.avoupavou.btcross.GameActivity">
+    tools:context="com.avoupavou.btcross.BoardActivity">
 
         <com.avoupavou.btcross.CanvasView
             android:id="@+id/my_canvas"
@@ -10,9 +10,9 @@
             android:layout_height="match_parent" />
 
         <android.support.design.widget.FloatingActionButton android:id="@+id/fab"
-    android:layout_width="wrap_content" android:layout_height="wrap_content"
-    android:layout_gravity="bottom|end" android:layout_margin="@dimen/fab_margin"
-        android:layout_alignBottom="@id/my_canvas"
-        android:layout_alignParentRight="true"
-        android:src="@mipmap/ic_autorenew_black_24dp" />
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end" android:layout_margin="@dimen/fab_margin"
+            android:layout_alignBottom="@id/my_canvas"
+            android:layout_alignParentRight="true"
+            android:src="@mipmap/ic_autorenew_black_24dp" />
 </FrameLayout>

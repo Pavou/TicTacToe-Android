@@ -21,7 +21,7 @@ public class Sender implements Runnable {
         if(writer!=null) {
             writer.println(message);
         }else{
-            Log.d("Sender", "writer null");
+            Log.d("Sender", "Writer null");
         }
     }
 }

@@ -10,7 +10,9 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -81,6 +83,11 @@ public class WiFiDirectReceiver extends BroadcastReceiver implements WifiP2pMana
         int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
         isWifiDirectEnabled = state == WifiP2pManager.WIFI_P2P_STATE_ENABLED;
         Log.d(TAG, "Wifi Direct state: " + (isWifiDirectEnabled ? "ENABLED" : "DISSABLED "));
+        if(!isWifiDirectEnabled){
+            mActivity.startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+            Toast.makeText(mActivity.getApplication().getApplicationContext(),"Enable Wifi and then press Back",Toast.LENGTH_LONG).show();
+        }
+
     }
 
     private void handleWifiP2pPeersChanged(Intent intent) {
@@ -172,7 +179,7 @@ public class WiFiDirectReceiver extends BroadcastReceiver implements WifiP2pMana
         if(game!=null) {
             game.sendMsg(msg);
         }else{
-            Log.d(TAG,"game null");
+            Log.d(TAG,"Game null");
         }
     }
 }
