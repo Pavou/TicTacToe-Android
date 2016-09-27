@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/BtCross.iml" filepath="$PROJECT_DIR$/BtCross.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Tic_Tac_Toe_WifiDirect.iml" filepath="$PROJECT_DIR$/Tic_Tac_Toe_WifiDirect.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
